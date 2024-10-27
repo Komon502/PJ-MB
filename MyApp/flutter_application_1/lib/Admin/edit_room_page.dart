@@ -25,14 +25,13 @@ class _EditRoomPageState extends State<EditRoomPage> {
     }
   }
 
-  int _selectedIndex = 0; // For BottomNavigationBar
+  int _selectedIndex = 0;
   
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          // Custom Header
           Container(
             color: Colors.blue,
             padding: EdgeInsets.all(16.0),
@@ -84,7 +83,6 @@ class _EditRoomPageState extends State<EditRoomPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Image placeholder
                       Container(
                         width: double.infinity,
                         height: 100,
@@ -97,7 +95,6 @@ class _EditRoomPageState extends State<EditRoomPage> {
                         ),
                       ),
                       SizedBox(height: 16.0),
-                      // Building and Room TextFields
                       TextField(
                         controller: _buildingController,
                         decoration: InputDecoration(
@@ -113,7 +110,6 @@ class _EditRoomPageState extends State<EditRoomPage> {
                         ),
                       ),
                       SizedBox(height: 16.0),
-                      // Status Dropdown
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -139,7 +135,6 @@ class _EditRoomPageState extends State<EditRoomPage> {
                         ],
                       ),
                       SizedBox(height: 16.0),
-                      // Date Picker
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -159,7 +154,6 @@ class _EditRoomPageState extends State<EditRoomPage> {
                         ],
                       ),
                       SizedBox(height: 16.0),
-                      // Confirm Button
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
