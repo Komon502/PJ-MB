@@ -11,6 +11,27 @@ class _AddRoomPageState extends State<AddRoomPage> {
   final TextEditingController _buildingController = TextEditingController();
   final TextEditingController _roomController = TextEditingController();
   File? _imageFile;
+  int _currentIndex = 0;
+
+  void _navigateToPage(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    switch (index) {
+      case 0:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => BrowseRoomPage()));
+        break;
+      case 1:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ListPage()));
+        break;
+      case 2:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => AccessTimePage()));
+        break;
+    }
+  }
 
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -20,8 +41,6 @@ class _AddRoomPageState extends State<AddRoomPage> {
       });
     }
   }
-
-  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -89,39 +108,20 @@ class _AddRoomPageState extends State<AddRoomPage> {
                 ),
               ),
               SizedBox(height: 16.0),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Status: Available',
-                  style: TextStyle(
-                    color: Colors.black54,
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              SizedBox(height: 16.0),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF85EE91),
-                  minimumSize: Size(120, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                ),
                 onPressed: () {
                   String building = _buildingController.text;
                   String room = _roomController.text;
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Room $room in building $building added.'),
+                      content: Text('Room $room in $building added!'),
                     ),
                   );
                 },
-                child: Text(
-                  'Confirm',
-                  style: TextStyle(color: Colors.white),
+                child: Text('Add Room'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0077FF),
                 ),
               ),
             ],
@@ -130,23 +130,19 @@ class _AddRoomPageState extends State<AddRoomPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: _navigateToPage,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: '',
+            label: 'Browse',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
-            label: '',
+            label: 'List',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.access_time),
-            label: '',
+            label: 'Access Time',
           ),
         ],
         selectedItemColor: Colors.black,

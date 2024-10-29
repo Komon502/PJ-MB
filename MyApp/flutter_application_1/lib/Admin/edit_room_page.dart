@@ -26,7 +26,28 @@ class _EditRoomPageState extends State<EditRoomPage> {
   }
 
   int _selectedIndex = 0;
-  
+
+  // Navigation function
+  void _navigateToPage(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    switch (index) {
+      case 0:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => BrowseRoomPage()));
+        break;
+      case 1:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => StatusPage()));
+        break;
+      case 2:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => HistoryPage()));
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,7 +109,7 @@ class _EditRoomPageState extends State<EditRoomPage> {
                         height: 100,
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            image: AssetImage('img/img1.png'), // Ensure path is correct
+                            image: AssetImage('img/img1.png'),
                             fit: BoxFit.cover,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
@@ -185,23 +206,19 @@ class _EditRoomPageState extends State<EditRoomPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: _navigateToPage,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: '',
+            label: 'Browse',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment),
-            label: '',
+            label: 'Status',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.schedule),
-            label: '',
+            label: 'History',
           ),
         ],
       ),

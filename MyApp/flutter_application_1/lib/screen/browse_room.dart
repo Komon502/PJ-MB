@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// import 'status_page.dart';
+// import 'history_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -24,9 +26,9 @@ class BrowseRoom extends StatefulWidget {
 }
 
 class _BrowseRoomState extends State<BrowseRoom> {
-  bool isRoomPending = false;
+  List<bool> isRoomPending = [false, false, false, false, false];
 
-  void showBookingDialog(BuildContext context, String room, String building) {
+  void showBookingDialog(BuildContext context, String room, String building, int index) {
     TextEditingController idController = TextEditingController();
     TextEditingController reasonController = TextEditingController();
 
@@ -60,7 +62,7 @@ class _BrowseRoomState extends State<BrowseRoom> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  isRoomPending = true;
+                  isRoomPending[index] = true;
                 });
                 Navigator.of(context).pop();
               },
@@ -87,47 +89,11 @@ class _BrowseRoomState extends State<BrowseRoom> {
               room: '204',
               building: 'C2',
               imagePath: 'img/img1.png',
-              isPending: isRoomPending,
+              isPending: isRoomPending[0],
               onRent: () {
-                if (!isRoomPending) {
-                  showBookingDialog(context, '204', 'C2');
+                if (!isRoomPending[0]) {
+                  showBookingDialog(context, '204', 'C2', 0);
                 }
-              },
-            ),
-            RoomCard(
-              room: '312',
-              building: 'C2',
-              imagePath: 'img/img1.png',
-              isPending: false,
-              onRent: () {
-                showBookingDialog(context, '312', 'C2');
-              },
-            ),
-            RoomCard(
-              room: '401',
-              building: 'C2',
-              imagePath: 'img/img1.png',
-              isPending: false,
-              onRent: () {
-                showBookingDialog(context, '401', 'C2');
-              },
-            ),
-            RoomCard(
-              room: '503',
-              building: 'C3',
-              imagePath: 'img/img1.png',
-              isPending: false,
-              onRent: () {
-                showBookingDialog(context, '101', 'C3');
-              },
-            ),
-            RoomCard(
-              room: '604',
-              building: 'C3',
-              imagePath: 'img/img1.png',
-              isPending: false,
-              onRent: () {
-                showBookingDialog(context, '102', 'C3');
               },
             ),
           ],
@@ -139,8 +105,33 @@ class _BrowseRoomState extends State<BrowseRoom> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            IconButton(icon: Icon(Icons.home), onPressed: () {}),
-            IconButton(icon: Icon(Icons.history), onPressed: () {}),
+            IconButton(
+              icon: Icon(Icons.home),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => BrowseRoom()),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.list),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  // MaterialPageRoute(builder: (context) => StatusPage()),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.history),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  // MaterialPageRoute(builder: (context) => HistoryPage()),
+                );
+              },
+            ),
           ],
         ),
       ),
