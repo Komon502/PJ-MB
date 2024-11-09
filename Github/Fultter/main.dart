@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Project/approver_page.dart';
 import 'package:myapp/Project/login.dart';
 import 'package:myapp/Project/register.dart';
+import 'package:myapp/Project/staff_page.dart';
 import 'package:myapp/Project/user_page.dart';
 
 void main() {
@@ -13,6 +15,8 @@ void main() {
         '/login' : (context) => const LoginPage(),
         '/register' : (context) => const RegisterPage(),
         '/user' : (context) => const userPage(),
+        '/approver' : (context) => const approverPage(),
+        '/staff' : (context) => const staffPage(),
         
       //   '/two' : (context) => const SecondRoute(),
       },

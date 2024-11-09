@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 25, 2024 at 05:40 PM
+-- Generation Time: Oct 31, 2024 at 09:42 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -50,16 +50,17 @@ CREATE TABLE `historys` (
   `id` int(11) NOT NULL,
   `requestID` int(11) NOT NULL,
   `approver` int(11) NOT NULL,
-  `lender` int(11) NOT NULL,
-  `borrow_status` enum('0','1') DEFAULT NULL COMMENT 'Null = not borrowed yet, 0 = borrowing, 1 = returned'
+  `borrow_status` enum('0','1','2') DEFAULT NULL COMMENT '0 = Disapproved, 1 = borrowing, 2 = returned'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `historys`
 --
 
-INSERT INTO `historys` (`id`, `requestID`, `approver`, `lender`, `borrow_status`) VALUES
-(1, 1, 2, 3, '0');
+INSERT INTO `historys` (`id`, `requestID`, `approver`, `borrow_status`) VALUES
+(1, 1, 2, '0'),
+(2, 13, 2, '1'),
+(3, 14, 2, '2');
 
 -- --------------------------------------------------------
 
@@ -72,15 +73,18 @@ CREATE TABLE `request` (
   `room_slot_ID` int(11) DEFAULT NULL,
   `requestBy` int(11) DEFAULT NULL,
   `request_status` enum('0','1') DEFAULT NULL COMMENT 'Null = pending, 0 = Unapproved, 1 = approved',
-  `request_reason` varchar(500) DEFAULT NULL
+  `request_reason` varchar(500) DEFAULT NULL,
+  `request_date` date DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `request`
 --
 
-INSERT INTO `request` (`id`, `room_slot_ID`, `requestBy`, `request_status`, `request_reason`) VALUES
-(1, 1, 1, '0', 'Good room');
+INSERT INTO `request` (`id`, `room_slot_ID`, `requestBy`, `request_status`, `request_reason`, `request_date`) VALUES
+(1, 1, 1, '0', 'Good room', '2024-10-30'),
+(13, 2, 5, '1', 'Good room jubjub', '2024-11-01'),
+(14, 5, 6, '1', 'Test1\n', '2024-11-01');
 
 -- --------------------------------------------------------
 
@@ -100,15 +104,15 @@ CREATE TABLE `Room` (
 
 INSERT INTO `Room` (`ID`, `building`, `image`) VALUES
 (1, 'C1', 'room1.jpg'),
-(2, 'C1', 'room2.jpg'),
-(3, 'C1', 'room3.jpg'),
-(4, 'C1', 'room4.jpg'),
-(5, 'C1', 'room5.jpg'),
-(6, 'C2', 'room6.jpg'),
-(7, 'D1', 'room7.jpg'),
-(8, 'D1', 'room8.jpg'),
-(9, 'D1', 'room9.jpg'),
-(10, 'C2', 'room10.jpg');
+(2, 'C1', 'room1.jpg'),
+(3, 'C1', 'room1.jpg'),
+(4, 'C1', 'room1.jpg'),
+(5, 'C1', 'room1.jpg'),
+(6, 'C2', 'room2.jpg'),
+(7, 'D1', 'room3.jpg'),
+(8, 'D1', 'room3.jpg'),
+(9, 'D1', 'room3.jpg'),
+(10, 'C2', 'room2.jpg');
 
 -- --------------------------------------------------------
 
@@ -130,8 +134,10 @@ CREATE TABLE `room_time_slots` (
 INSERT INTO `room_time_slots` (`slotID`, `roomID`, `time_slot_id`, `room_time_status`) VALUES
 (1, 1, 1, '1'),
 (2, 1, 2, '1'),
-(3, 1, 3, '1'),
-(4, 1, 4, '0');
+(3, 1, 3, '0'),
+(4, 1, 4, '0'),
+(5, 6, 1, '1'),
+(6, 6, 3, '1');
 
 -- --------------------------------------------------------
 
@@ -166,18 +172,22 @@ CREATE TABLE `User` (
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `role` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0 = user, 1 = approver, 2 = staff',
-  `borrowQuota` int(1) NOT NULL DEFAULT 1
+  `borrowQuota` int(1) NOT NULL DEFAULT 1,
+  `username` varchar(50) DEFAULT NULL,
+  `studentID` bigint(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `User`
 --
 
-INSERT INTO `User` (`id`, `email`, `password`, `role`, `borrowQuota`) VALUES
-(1, 'user@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 0, 1),
-(2, 'approver@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 1, 1),
-(3, 'staff@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 2, 1),
-(4, 'Tese@Email.com', '$2b$10$okDFzW1mksE2TebzP3trHupcHmFgvcBrXJbR2FahyJ6k6rR42LKMy', 0, 1);
+INSERT INTO `User` (`id`, `email`, `password`, `role`, `borrowQuota`, `username`, `studentID`) VALUES
+(1, 'user@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 0, 1, 'user', 6531501999),
+(2, 'approver@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 1, 1, 'approver', NULL),
+(3, 'staff@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 2, 1, 'staff', NULL),
+(4, 'Tese@Email.com', '$2b$10$okDFzW1mksE2TebzP3trHupcHmFgvcBrXJbR2FahyJ6k6rR42LKMy', 0, 1, 'test', 6531501998),
+(5, 'nes@gmail.com', '$2b$10$ZJd9v4ZTrsx3sJmZMtj5tOd4PNoaKrew/JbqgsR0wQBMh2UNt4hfu', 0, 1, 'Nes', 6531501997),
+(6, 'test2@gmail.com', '$2b$10$d41II6qT6YyZ9.kgAQbBxeI.VoxG8ApIzhtM2nj8KIsoqMLHbflTa', 0, 1, 'test2', 6531501922);
 
 --
 -- Indexes for dumped tables
@@ -195,8 +205,7 @@ ALTER TABLE `Building`
 ALTER TABLE `historys`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_requestID` (`requestID`),
-  ADD KEY `fk_approver` (`approver`),
-  ADD KEY `fk_lender` (`lender`);
+  ADD KEY `fk_approver` (`approver`);
 
 --
 -- Indexes for table `request`
@@ -242,19 +251,19 @@ ALTER TABLE `User`
 -- AUTO_INCREMENT for table `historys`
 --
 ALTER TABLE `historys`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `request`
 --
 ALTER TABLE `request`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `room_time_slots`
 --
 ALTER TABLE `room_time_slots`
-  MODIFY `slotID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `slotID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `time_slots`
@@ -266,7 +275,7 @@ ALTER TABLE `time_slots`
 -- AUTO_INCREMENT for table `User`
 --
 ALTER TABLE `User`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Constraints for dumped tables
@@ -277,7 +286,6 @@ ALTER TABLE `User`
 --
 ALTER TABLE `historys`
   ADD CONSTRAINT `fk_approver` FOREIGN KEY (`approver`) REFERENCES `User` (`id`),
-  ADD CONSTRAINT `fk_lender` FOREIGN KEY (`lender`) REFERENCES `User` (`id`),
   ADD CONSTRAINT `fk_requestID` FOREIGN KEY (`requestID`) REFERENCES `request` (`id`);
 
 --

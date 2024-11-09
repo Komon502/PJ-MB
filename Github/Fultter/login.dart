@@ -1,5 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -21,7 +23,7 @@ bool _passwordVisible = false;
 void loginAPI(BuildContext context, String email, String password) async {
   try {
     final response = await http.post(
-      Uri.parse('http://192.168.2.34:3000/login'), // Your Node.js backend URL
+      Uri.parse('http://192.168.2.36:3000/login'), // Your Node.js backend URL
       body: jsonEncode({
         'email': email,
         'password': password,
@@ -41,7 +43,29 @@ void loginAPI(BuildContext context, String email, String password) async {
           Navigator.pushReplacementNamed(
             context,
             '/user',
-            arguments: user["id"],
+            arguments: {"id": user["id"], "username": user["username"]},
+          );
+          break;
+        case 1:
+          // Navigator.pushNamed(context, '/user',arguments: user["id"]);
+          _emailController.clear();
+          _passwordController.clear();
+
+          Navigator.pushReplacementNamed(
+            context,
+            '/approver',
+            arguments: {"id": user["id"], "username": user["username"]},
+          );
+          break;
+        case 2:
+          // Navigator.pushNamed(context, '/user',arguments: user["id"]);
+          _emailController.clear();
+          _passwordController.clear();
+
+          Navigator.pushReplacementNamed(
+            context,
+            '/staff',
+            arguments: {"id": user["id"], "username": user["username"]},
           );
           break;
         default:
@@ -159,7 +183,7 @@ class _MyWidgetState extends State<LoginPage> {
                     TextField(
                       controller: _passwordController,
                       obscureText: !_passwordVisible,
-                       style: TextStyle(
+                      style: TextStyle(
                         fontFamily: 'LilitaOne',
                       ),
                       decoration: InputDecoration(
@@ -181,7 +205,10 @@ class _MyWidgetState extends State<LoginPage> {
                       ),
                     ),
                     Container(
-                      margin: const EdgeInsets.only(top: 13, bottom: 13,),
+                      margin: const EdgeInsets.only(
+                        top: 13,
+                        bottom: 13,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -193,9 +220,10 @@ class _MyWidgetState extends State<LoginPage> {
                                   checkboxTheme: CheckboxThemeData(
                                     side: MaterialStateBorderSide.resolveWith(
                                       (states) => BorderSide(
-                                        color: Colors
-                                            .white.withOpacity(0.3), // Set your desired border color here
-                                        width: 2.0, // Set the width of the border
+                                        color: Colors.white.withOpacity(
+                                            0.3), // Set your desired border color here
+                                        width:
+                                            2.0, // Set the width of the border
                                       ),
                                     ),
                                   ),
@@ -203,7 +231,8 @@ class _MyWidgetState extends State<LoginPage> {
                                 child: Checkbox(
                                   checkColor: Colors.black54,
                                   activeColor: Colors.white,
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                   value: _passwordVisible,
                                   onChanged: (bool? value) {
                                     setState(() {
@@ -215,7 +244,10 @@ class _MyWidgetState extends State<LoginPage> {
                               const Text(
                                 "Show password",
                                 style: TextStyle(
-                                    fontFamily: 'LilitaOne', color: Colors.white,fontSize: 20,),
+                                  fontFamily: 'LilitaOne',
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                ),
                               ),
                             ],
                           ),

@@ -23,17 +23,21 @@ void showErrorDialog(BuildContext context, textAlert) {
 
 class _MyWidgetState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _studentIDController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _repasswordController = TextEditingController();
 
-  void registerAPI(BuildContext context, String email, String password) async {
+  void registerAPI(BuildContext context, email,  name, studentID , password) async {
     try {
       final response = await http.post(
         Uri.parse(
-            'http://192.168.2.34:3000/register'), // Your Node.js backend URL
+            'http://192.168.2.36:3000/register'), // Your Node.js backend URL
         body: jsonEncode({
           'email': email,
+          'name': name,
           'password': password,
+          'studentID': studentID
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -48,9 +52,9 @@ class _MyWidgetState extends State<RegisterPage> {
           desc: '${response.body}',
           btnOkOnPress: () {
             Navigator.pushReplacementNamed(
-          context,
-          '/login',
-        );
+              context,
+              '/login',
+            );
           },
         ).show();
       } else {
@@ -101,7 +105,7 @@ class _MyWidgetState extends State<RegisterPage> {
                       ],
                     )),
                 Expanded(
-                  flex: 5,
+                  flex: 6,
                   child: Column(
                     children: [
                       SizedBox(
@@ -110,8 +114,8 @@ class _MyWidgetState extends State<RegisterPage> {
                       TextField(
                         controller: _emailController,
                         style: TextStyle(
-                        fontFamily: 'LilitaOne',
-                      ),
+                          fontFamily: 'LilitaOne',
+                        ),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           filled: true,
@@ -132,11 +136,77 @@ class _MyWidgetState extends State<RegisterPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _nameController,
+                              style: TextStyle(
+                                fontFamily: 'LilitaOne',
+                              ),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.3),
+                                labelText: "Username",
+                                labelStyle: TextStyle(
+                                  fontFamily: 'LilitaOne',
+                                  color: Colors.black54,
+                                  fontSize: 20,
+                                ),
+                                hintText: 'Enter your username',
+                                hintStyle: TextStyle(
+                                  fontFamily: 'LilitaOne',
+                                  color: Colors.black54,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 2.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 20), 
+                          Expanded(
+                            child: TextField(
+                              controller: _studentIDController,
+                              style: TextStyle(
+                                fontFamily: 'LilitaOne',
+                              ),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.3),
+                                labelText: "Student ID",
+                                labelStyle: TextStyle(
+                                  fontFamily: 'LilitaOne',
+                                  color: Colors.black54,
+                                  fontSize: 20,
+                                ),
+                                hintText: 'Enter your Student ID',
+                                hintStyle: TextStyle(
+                                  fontFamily: 'LilitaOne',
+                                  color: Colors.black54,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 2.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                       TextField(
                         controller: _passwordController,
                         style: TextStyle(
-                        fontFamily: 'LilitaOne',
-                      ),
+                          fontFamily: 'LilitaOne',
+                        ),
                         obscureText: true,
                         decoration: InputDecoration(
                           border: InputBorder.none,
@@ -161,8 +231,8 @@ class _MyWidgetState extends State<RegisterPage> {
                       TextField(
                         controller: _repasswordController,
                         style: TextStyle(
-                        fontFamily: 'LilitaOne',
-                      ),
+                          fontFamily: 'LilitaOne',
+                        ),
                         obscureText: true,
                         decoration: InputDecoration(
                           border: InputBorder.none,
@@ -187,13 +257,14 @@ class _MyWidgetState extends State<RegisterPage> {
                       FilledButton(
                         onPressed: () {
                           final email = _emailController.text.toString();
+                          final name = _nameController.text.toString();
                           final password = _passwordController.text.toString();
-                          final repassword =
-                              _repasswordController.text.toString();
+                          final repassword =_repasswordController.text.toString();
+                          final studentID = _studentIDController.text.toString();
 
                           if (password == repassword) {
                             // Proceed with registration
-                            registerAPI(context, email, password);
+                            registerAPI(context, email, name, studentID, password);
                           } else {
                             // Show error dialog
                             AwesomeDialog(

@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:myapp/Project/data.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:awesome_dialog/awesome_dialog.dart';
@@ -17,7 +16,10 @@ class _MyWidgetState extends State<userPage> {
   List? rooms;
   List? request;
   List? history;
-  int? userID;
+  late int? userID;
+  late String? username;
+  late Map<String, dynamic>? args;
+
   final TextEditingController _reasonController = TextEditingController();
 
   void showSuccessDialog(BuildContext context, textAlert) {
@@ -74,11 +76,11 @@ class _MyWidgetState extends State<userPage> {
   }
 
   Future<void> postRentRoomAPI(int slotID, String reason) async {
-    final userID = ModalRoute.of(context)?.settings.arguments as int?;
+    userID = args?["id"] as int?;
     // showSuccessDialog(context, '${userID}, ${roomID}');
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.2.34:3000/user/rentRoom'),
+        Uri.parse('http://192.168.2.36:3000/user/rentRoom'),
         body: jsonEncode({
           'userID': userID,
           'slotID': slotID,
@@ -101,16 +103,9 @@ class _MyWidgetState extends State<userPage> {
   }
 
   Future<void> getRoomAPI() async {
-    final userID = ModalRoute.of(context)?.settings.arguments as int?;
-
-    if (userID == null) {
-      showErrorDialog(context, "User ID not found");
-      return;
-    }
-
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.2.34:3000/rooms'), // Your API endpoint
+        Uri.parse('http://192.168.2.36:3000/rooms'), // Your API endpoint
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -128,7 +123,7 @@ class _MyWidgetState extends State<userPage> {
 
   Future<void> getRequestAPI() async {
     // showSuccessDialog(context, "getRequestAPI function is called");
-    final userID = ModalRoute.of(context)?.settings.arguments as int?;
+    userID = args?["id"] as int?;
 
     if (userID == null) {
       showErrorDialog(context, "User ID not found");
@@ -137,7 +132,7 @@ class _MyWidgetState extends State<userPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://yourserver.com/user/request?userID=$userID'),
+        Uri.parse('http://192.168.2.36:3000/user/request?userID=$userID'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -153,8 +148,7 @@ class _MyWidgetState extends State<userPage> {
   }
 
   Future<void> getHistoryAPI() async {
-    final userID = ModalRoute.of(context)?.settings.arguments as int?;
-
+    userID = args?["id"] as int?;
     if (userID == null) {
       showErrorDialog(context, "User ID not found");
       return;
@@ -162,7 +156,7 @@ class _MyWidgetState extends State<userPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://yourserver.com/user/history?userID=$userID'),
+        Uri.parse('http://192.168.2.36:3000/user/history?userID=$userID'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -188,7 +182,9 @@ class _MyWidgetState extends State<userPage> {
   }
 
   Widget build(BuildContext context) {
-    userID = ModalRoute.of(context)?.settings.arguments as int;
+    args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    userID = args?["id"] as int?;
+    username = args?["username"] as String;
     DateTime now = DateTime.now(); // Get the current date and time
     Color firstColor = Color.fromARGB(255, 254, 190, 191);
     Color secondColor = Color.fromARGB(255, 87, 150, 225);
@@ -198,7 +194,7 @@ class _MyWidgetState extends State<userPage> {
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: MediaQuery.of(context).size.height * 0.1,
-          backgroundColor: firstColor,
+          backgroundColor: secondColor,
           title: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -208,7 +204,9 @@ class _MyWidgetState extends State<userPage> {
                     icon: Icon(
                       Icons.account_circle_rounded,
                       color: Colors.white,
-                      shadows: <Shadow>[Shadow(color: Colors.grey, blurRadius: 12.0)],
+                      shadows: <Shadow>[
+                        Shadow(color: Colors.grey, blurRadius: 12.0)
+                      ],
                       size: 40,
                     ),
                     onPressed: () {
@@ -217,14 +215,18 @@ class _MyWidgetState extends State<userPage> {
                         dialogType: DialogType.question,
                         animType: AnimType.rightSlide,
                         title: 'Log out?',
-                        btnCancelOnPress: () {
-                        },
+                        btnCancelOnPress: () {},
                         btnOkOnPress: () {
                           Navigator.pushReplacementNamed(context, "/login");
                         },
                       ).show();
                     },
                   ),
+                  Text(
+                    "$username",
+                    style:
+                        TextStyle(fontFamily: 'LilitaOne', color: Colors.white),
+                  )
                 ],
               ),
             ],
@@ -233,7 +235,7 @@ class _MyWidgetState extends State<userPage> {
         bottomNavigationBar: Container(
           height: MediaQuery.of(context).size.height * 0.07,
           decoration: BoxDecoration(
-            color: firstColor,
+            color: secondColor,
             boxShadow: [
               BoxShadow(
                 color: Colors.grey.withOpacity(0.5),
@@ -265,445 +267,564 @@ class _MyWidgetState extends State<userPage> {
         body: TabBarView(
           children: [
             // Home
-            SafeArea(
-              child: Container(
-                height: (rooms != null && rooms!.length > 3)
-                    ? null
-                    : MediaQuery.of(context).size.height,
-                width: MediaQuery.of(context).size.width,
-                color: firstColor,
-                child: Container(
-                  child: rooms != null
-                      ? RefreshIndicator(
-                          backgroundColor: secondColor,
-                          color: firstColor,
-                          onRefresh: getRoomAPI,
-                          child: ListView.builder(
-                            itemCount: rooms?.length,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.all(15.0),
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    border: Border.all(color: Colors.white),
-                                    borderRadius: BorderRadius.circular(30),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.5),
-                                        spreadRadius: 5,
-                                        blurRadius: 7,
-                                        offset: Offset(
-                                            0, 3), // changes position of shadow
+            RefreshIndicator(
+              backgroundColor: secondColor,
+              color: firstColor,
+              onRefresh: getRoomAPI,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        color: firstColor,
+                        width: MediaQuery.of(context).size.width,
+                        child: const Text(
+                          "Room",
+                          style: TextStyle(
+                              fontFamily: 'LilitaOne',
+                              color: Colors.white,
+                              fontSize: 30),
+                        )),
+                    SafeArea(
+                      child: Container(
+                        height: (rooms != null && rooms!.length > 3)
+                            ? null
+                            : MediaQuery.of(context).size.height,
+                        width: MediaQuery.of(context).size.width,
+                        color: firstColor,
+                        child: rooms != null
+                            ? ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: rooms?.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(15.0),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        border: Border.all(color: Colors.white),
+                                        borderRadius: BorderRadius.circular(30),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.5),
+                                            spreadRadius: 5,
+                                            blurRadius: 7,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
-                                                Text(
-                                                    'Building: ${rooms?[index]["building"]}',
-                                                    style: TextStyle(
-                                                      fontFamily: 'LilitaOne',
-                                                    )),
-                                                Text(
-                                                    'Room ID: ${rooms?[index]["roomID"]}',
-                                                    style: TextStyle(
-                                                      fontFamily: 'LilitaOne',
-                                                    )),
-                                                Text(
-                                                    rooms?[index][
-                                                                "room_time_status"] ==
-                                                            "1"
-                                                        ? "Status: Available"
-                                                        : "Status: Unavailable",
-                                                    style: TextStyle(
-                                                      fontFamily: 'LilitaOne',
-                                                    )),
-                                                Text(
-                                                    "Borrow time: ${rooms?[index]["borrow_time"]}",
-                                                    style: TextStyle(
-                                                      fontFamily: 'LilitaOne',
-                                                    )),
-                                                Text(
-                                                    "Return date: ${rooms?[index]["return_time"]}",
-                                                    style: TextStyle(
-                                                      fontFamily: 'LilitaOne',
-                                                    ))
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Building: ${rooms?[index]["building"]}',
+                                                      style: const TextStyle(
+                                                        fontFamily: 'LilitaOne',
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      'Room ID: ${rooms?[index]["roomID"]}',
+                                                      style: const TextStyle(
+                                                        fontFamily: 'LilitaOne',
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      rooms?[index][
+                                                                  "room_time_status"] ==
+                                                              "1"
+                                                          ? "Status: Available"
+                                                          : "Status: Unavailable",
+                                                      style: const TextStyle(
+                                                        fontFamily: 'LilitaOne',
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      "Booking time: ${rooms?[index]["borrow_time"]} to ${rooms?[index]["return_time"]}",
+                                                      style: const TextStyle(
+                                                        fontFamily: 'LilitaOne',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Image.asset(
+                                                  "assets/${rooms?[index]['image']}",
+                                                  height: 100,
+                                                  width: 100,
+                                                  fit: BoxFit.cover,
+                                                )
                                               ],
                                             ),
-                                            Image.asset(
-                                              "assets/clock-tower.jpg",
-                                              height: 100,
-                                              width: 100,
-                                              fit: BoxFit.cover,
-                                            )
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: FilledButton(
+                                                onPressed: rooms?[index][
+                                                            "room_time_status"] ==
+                                                        "1"
+                                                    ? () => rentForm(
+                                                        rooms?[index]
+                                                            ["building"],
+                                                        rooms?[index]["roomID"],
+                                                        rooms?[index]["slotID"])
+                                                    : null,
+                                                style: ButtonStyle(
+                                                  backgroundColor:
+                                                      MaterialStateProperty.all(
+                                                          rooms?[index]
+                                                                      [
+                                                                      "room_time_status"] ==
+                                                                  "1"
+                                                              ? const Color
+                                                                  .fromARGB(255,
+                                                                  0, 119, 255)
+                                                              : secondColor
+                                                                  .withOpacity(
+                                                                      0.3)),
+                                                ),
+                                                child: const Text(
+                                                  "Rent",
+                                                  style: TextStyle(
+                                                      fontFamily: 'LilitaOne',
+                                                      color: Colors.white),
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         ),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: FilledButton(
-                                            onPressed: rooms?[index]
-                                                        ["room_time_status"] ==
-                                                    "1"
-                                                ? () => rentForm(
-                                                    rooms?[index]["building"],
-                                                    rooms?[index]["roomID"],
-                                                    rooms?[index]["slotID"])
-                                                : null,
-                                            style: ButtonStyle(
-                                              backgroundColor:
-                                                  MaterialStateProperty.all(rooms?[
-                                                                  index][
-                                                              "room_time_status"] ==
-                                                          "1"
-                                                      ? const Color.fromARGB(
-                                                          255, 0, 119, 255)
-                                                      : secondColor
-                                                          .withOpacity(0.3)),
-                                            ),
-                                            child: const Text(
-                                              "Rent",
-                                              style: TextStyle(
-                                                  fontFamily: 'LilitaOne',
-                                                  color: Colors.white),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+                                  );
+                                },
+                              )
+                            : const Text(
+                                "No rooms available",
+                                style: TextStyle(
+                                  fontFamily: 'LilitaOne',
                                 ),
-                              );
-                            },
-                          ),
-                        )
-                      : const Text("No rooms available",
-                          style: TextStyle(
-                            fontFamily: 'LilitaOne',
-                          )),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
             // Request
-            SafeArea(
-              child: RefreshIndicator(
-                backgroundColor: secondColor,
-                color: firstColor,
-                onRefresh: getRequestAPI,
-                child: Container(
-                  height: (request != null && request!.length > 3)
-                      ? null
-                      : MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
-                  color: firstColor,
-                  child: request != null
-                      ? ListView.builder(
-                          itemCount: request?.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(color: Colors.white),
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.5),
-                                      spreadRadius: 5,
-                                      blurRadius: 7,
-                                      offset: Offset(
-                                          0, 3), // changes position of shadow
-                                    ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'ID: ${request?[index]["id"]}',
-                                                style: const TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                              Text(
-                                                  'Building: ${request?[index]["building"]}',
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                              Text(
-                                                  'Room ID: ${request?[index]["roomID"]}',
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    'Reason: ',
-                                                    style: TextStyle(
-                                                      fontFamily: 'LilitaOne',
-                                                    ),
-                                                  ),
-                                                  FilledButton(
-                                                    onPressed: () =>
-                                                        showSuccessDialog(
-                                                            context,
-                                                            request?[index][
-                                                                "request_reason"]),
-                                                    child: Text(
-                                                      "Show",
-                                                      style: TextStyle(
-                                                          fontSize: 10,
-                                                          color: Colors.white,
-                                                          fontFamily:
-                                                              'LilitaOne'),
-                                                    ),
-                                                    style: ButtonStyle(
-                                                      tapTargetSize:
-                                                          MaterialTapTargetSize
-                                                              .shrinkWrap,
-                                                      minimumSize:
-                                                          MaterialStateProperty
-                                                              .all(
-                                                                  Size(40, 20)),
-                                                      padding:
-                                                          MaterialStateProperty
-                                                              .all(EdgeInsets
-                                                                  .zero),
-                                                      backgroundColor:
-                                                          WidgetStateProperty
-                                                              .all(secondColor),
-                                                      elevation:
-                                                          WidgetStateProperty
-                                                              .all(3),
-                                                      shape: WidgetStateProperty
-                                                          .all<
-                                                              RoundedRectangleBorder>(
-                                                        RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      20.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Text(
-                                                  "Borrow date: ${request?[index]["borrow_time"]}",
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                              Text(
-                                                  "Return date: ${request?[index]["return_time"]}",
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                            ],
+            RefreshIndicator(
+              backgroundColor: secondColor,
+              color: firstColor,
+              onRefresh: getRequestAPI,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        color: firstColor,
+                        width: MediaQuery.of(context).size.width,
+                        child: const Text(
+                          "Request",
+                          style: TextStyle(
+                              fontFamily: 'LilitaOne',
+                              color: Colors.white,
+                              fontSize: 30),
+                        )),
+                    SafeArea(
+                      child: Container(
+                        height: (request != null && request!.length > 3)
+                            ? null
+                            : MediaQuery.of(context).size.height,
+                        width: MediaQuery.of(context).size.width,
+                        color: firstColor,
+                        child: request != null
+                            ? ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: request?.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        border: Border.all(color: Colors.white),
+                                        borderRadius: BorderRadius.circular(30),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.5),
+                                            spreadRadius: 5,
+                                            blurRadius: 7,
+                                            offset: Offset(0,
+                                                3), // changes position of shadow
                                           ),
-                                          Image.asset(
-                                            "assets/clock-tower.jpg",
-                                            height: 100,
-                                            width: 100,
-                                            fit: BoxFit.cover,
-                                          )
                                         ],
                                       ),
-                                    ],
-                                  ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(10),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'ID: ${request?[index]["id"]}',
+                                                      style: const TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    Text(
+                                                        'Building: ${request?[index]["building"]}',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                        )),
+                                                    Text(
+                                                        'Room ID: ${request?[index]["roomID"]}',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                        )),
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          'Reason: ',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'LilitaOne',
+                                                          ),
+                                                        ),
+                                                        FilledButton(
+                                                          onPressed: () =>
+                                                              showSuccessDialog(
+                                                                  context,
+                                                                  request?[
+                                                                          index]
+                                                                      [
+                                                                      "request_reason"]),
+                                                          child: Text(
+                                                            "Show",
+                                                            style: TextStyle(
+                                                                fontSize: 10,
+                                                                color: Colors
+                                                                    .white,
+                                                                fontFamily:
+                                                                    'LilitaOne'),
+                                                          ),
+                                                          style: ButtonStyle(
+                                                            tapTargetSize:
+                                                                MaterialTapTargetSize
+                                                                    .shrinkWrap,
+                                                            minimumSize:
+                                                                MaterialStateProperty
+                                                                    .all(Size(
+                                                                        40,
+                                                                        20)),
+                                                            padding:
+                                                                MaterialStateProperty
+                                                                    .all(EdgeInsets
+                                                                        .zero),
+                                                            backgroundColor:
+                                                                WidgetStateProperty
+                                                                    .all(
+                                                                        secondColor),
+                                                            elevation:
+                                                                WidgetStateProperty
+                                                                    .all(3),
+                                                            shape: WidgetStateProperty
+                                                                .all<
+                                                                    RoundedRectangleBorder>(
+                                                              RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            20.0),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Text(
+                                                        "Booking time: ${request?[index]["borrow_time"]} to ${request?[index]["return_time"]}",
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                        )),
+                                                    Row(
+                                                      children: [
+                                                        Text("Request status: ",
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  'LilitaOne',
+                                                            )),
+                                                        Text("Pending",
+                                                            style: TextStyle(
+                                                                fontFamily:
+                                                                    'LilitaOne',
+                                                                color: Colors
+                                                                        .yellow[
+                                                                    700])),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                Image.asset(
+                                                  "assets/${request?[index]["image"]}",
+                                                  height: 100,
+                                                  width: 100,
+                                                  fit: BoxFit.cover,
+                                                )
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : const Text(
+                                "No rooms available",
+                                style: TextStyle(
+                                  fontFamily: 'LilitaOne',
                                 ),
                               ),
-                            );
-                          },
-                        )
-                      : const Center(
-                          child: Text("No Request available",
-                              style: TextStyle(
-                                fontFamily: 'LilitaOne',
-                              ))),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
             //history
-            SafeArea(
-              child: RefreshIndicator(
-                backgroundColor: secondColor,
-                color: firstColor,
-                onRefresh: getHistoryAPI,
-                child: Container(
-                  height: (history != null && history!.length > 3)
-                      ? null
-                      : MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
-                  color: firstColor,
-                  child: request != null
-                      ? ListView.builder(
-                          itemCount: history?.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.all(15.0),
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(color: Colors.white),
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.5),
-                                      spreadRadius: 5,
-                                      blurRadius: 7,
-                                      offset: Offset(
-                                          0, 3), // changes position of shadow
-                                    ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'ID: ${history?[index]["id"]}',
-                                                style: const TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                              Text(
-                                                  'Building: ${history?[index]["building"]}',
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                              Text(
-                                                  'Room ID: ${history?[index]["roomID"]}',
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                              Row(
-                                                children: [
-                                                  Text('Reason: ',
-                                                      style: TextStyle(
-                                                        fontFamily: 'LilitaOne',
-                                                      )),
-                                                  FilledButton(
-                                                    onPressed: () =>
-                                                        showSuccessDialog(
-                                                            context,
-                                                            history?[index][
-                                                                "request_reason"]),
-                                                    child: Text(
-                                                      "Show",
-                                                      style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontFamily:
-                                                              'LilitaOne',
-                                                          color: Colors.white),
-                                                    ),
-                                                    style: ButtonStyle(
-                                                      tapTargetSize:
-                                                          MaterialTapTargetSize
-                                                              .shrinkWrap,
-                                                      minimumSize:
-                                                          MaterialStateProperty
-                                                              .all(
-                                                                  Size(40, 20)),
-                                                      padding:
-                                                          MaterialStateProperty
-                                                              .all(EdgeInsets
-                                                                  .zero),
-                                                      backgroundColor:
-                                                          WidgetStateProperty
-                                                              .all(secondColor),
-                                                      elevation:
-                                                          WidgetStateProperty
-                                                              .all(3),
-                                                      shape: WidgetStateProperty
-                                                          .all<
-                                                              RoundedRectangleBorder>(
-                                                        RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      20.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Text(
-                                                  'Borrow date: ${history?[index]["borrow_time"]}',
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                              Text(
-                                                  "Return date: ${history?[index]["return_time"]}",
-                                                  style: TextStyle(
-                                                    fontFamily: 'LilitaOne',
-                                                  )),
-                                            ],
-                                          ),
-                                          Image.asset(
-                                            "assets/clock-tower.jpg",
-                                            height: 100,
-                                            width: 100,
-                                            fit: BoxFit.cover,
+            RefreshIndicator(
+              backgroundColor: secondColor,
+              color: firstColor,
+              onRefresh: getHistoryAPI,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        color: firstColor,
+                        width: MediaQuery.of(context).size.width,
+                        child: const Text(
+                          "History",
+                          style: TextStyle(
+                              fontFamily: 'LilitaOne',
+                              color: Colors.white,
+                              fontSize: 30),
+                        )),
+                    SafeArea(
+                      child: Container(
+                        height: (history != null && history!.length > 3)
+                            ? null
+                            : MediaQuery.of(context).size.height,
+                        width: MediaQuery.of(context).size.width,
+                        color: firstColor,
+                        child: history != null
+                            ? ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: history?.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(15.0),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        border: Border.all(color: Colors.white),
+                                        borderRadius: BorderRadius.circular(30),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.5),
+                                            spreadRadius: 5,
+                                            blurRadius: 7,
+                                            offset: Offset(0,
+                                                3), // changes position of shadow
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(10),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'ID: ${history?[index]["id"]}',
+                                                      style: const TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    Text(
+                                                        'Building: ${history?[index]["building"]}',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                        )),
+                                                    Text(
+                                                        'Room ID: ${history?[index]["roomID"]}',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                        )),
+                                                    Row(
+                                                      children: [
+                                                        Text('Reason: ',
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  'LilitaOne',
+                                                            )),
+                                                        FilledButton(
+                                                          onPressed: () =>
+                                                              showSuccessDialog(
+                                                                  context,
+                                                                  history?[
+                                                                          index]
+                                                                      [
+                                                                      "request_reason"]),
+                                                          child: Text(
+                                                            "Show",
+                                                            style: TextStyle(
+                                                                fontSize: 10,
+                                                                fontFamily:
+                                                                    'LilitaOne',
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
+                                                          style: ButtonStyle(
+                                                            tapTargetSize:
+                                                                MaterialTapTargetSize
+                                                                    .shrinkWrap,
+                                                            minimumSize:
+                                                                MaterialStateProperty
+                                                                    .all(Size(
+                                                                        40,
+                                                                        20)),
+                                                            padding:
+                                                                MaterialStateProperty
+                                                                    .all(EdgeInsets
+                                                                        .zero),
+                                                            backgroundColor:
+                                                                WidgetStateProperty
+                                                                    .all(
+                                                                        secondColor),
+                                                            elevation:
+                                                                WidgetStateProperty
+                                                                    .all(3),
+                                                            shape: WidgetStateProperty
+                                                                .all<
+                                                                    RoundedRectangleBorder>(
+                                                              RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            20.0),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Text(
+                                                        'Booking time: ${history?[index]["borrow_time"]} to ${history?[index]["return_time"]}',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                        )),
+                                                    Text("Request date: ${history?[index]["request_date"]}",
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'LilitaOne',
+                                                        )),
+                                                    Row(
+                                                      children: [
+                                                        Text("Request status: ",
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  'LilitaOne',
+                                                            )),
+                                                        Text(
+                                                            (history?[index][
+                                                                        "request_status"] ==
+                                                                    "1")
+                                                                ? "Approved"
+                                                                : "Disapproved",
+                                                            style: TextStyle(
+                                                                fontFamily:
+                                                                    'LilitaOne',
+                                                                color: ((history?[index]
+                                                                            [
+                                                                            "request_status"] ==
+                                                                        1)
+                                                                    ? Colors
+                                                                        .green
+                                                                    : Colors
+                                                                        .red))),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                Image.asset(
+                                                  "assets/${history?[index]['image']}",
+                                                  height: 100,
+                                                  width: 100,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : const Text(
+                                "No rooms available",
+                                style: TextStyle(
+                                  fontFamily: 'LilitaOne',
                                 ),
                               ),
-                            );
-                          },
-                        )
-                      : const Center(
-                          child: Text(
-                          "No History available",
-                          style: TextStyle(
-                            fontFamily: 'LilitaOne',
-                          ),
-                        )),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -737,6 +858,9 @@ class _MyWidgetState extends State<userPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                SizedBox(
+                  height: 10,
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -795,6 +919,7 @@ class _MyWidgetState extends State<userPage> {
                       ),
                       onPressed: () {
                         Navigator.of(context).pop();
+                        _reasonController.clear();
                       },
                       child: Text("Cancel",
                           style: TextStyle(

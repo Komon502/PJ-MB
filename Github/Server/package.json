@@ -17,6 +17,8 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "nodemon": "^3.1.7",
+    "express": "^4.19.2",
+    "mysql2": "^3.9.3",
     "path": "^0.12.7"
   }
 }
