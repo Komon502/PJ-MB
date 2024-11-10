@@ -4,6 +4,7 @@ const path = require("path");
 const app = express();
 const bcrypt = require("bcrypt");
 const cron = require("node-cron");
+const jwt = require('jsonwebtoken');
 // database connection
 const con = require("./config/db");
 const { log } = require("console");
@@ -79,18 +80,20 @@ app.post("/register", (req, res) => {
   const username = req.body.name;
   const studentID = req.body.studentID;
   const raw_password = req.body.password;
-  const sqlCheck = `SELECT email FROM user WHERE email = ?;`;
+  const sqlCheck = `SELECT email, username, studentID FROM user WHERE email = ? OR username = ? OR studentID = ?;`
   const emailRegexp =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   // console.log(email, username, raw_password);
 
-  con.query(sqlCheck, [email], function (err, results) {
+  con.query(sqlCheck, [email, username, studentID], function (err, results) {
+    // console.log(email, results[0].email, username, results[0].username, studentID, results[0].studentID);
     if (results != "") {
+      
       if (email === results[0].email)
         return res.status(401).send("Email has been already used!");
       if (username === results[0].username)
         return res.status(401).send("Name has been already used!");
-      if (studentID === results[0].studentID)
+      if (studentID === `${results[0].studentID}`)
         return res.status(401).send("studentID has been already used!");
     }
     if (err) {
@@ -98,6 +101,7 @@ app.post("/register", (req, res) => {
     }
     if (results.length == 0) {
       if (emailRegexp.test(email) == true) {
+        res.status(200).send("Register success!");
         // Hash password
         bcrypt.hash(raw_password, 10, function (err, hash) {
           if (err) {
@@ -352,13 +356,14 @@ app.patch("/staff/edit", function (req, res) {
       console.error(err);
       return res.status(500).send("Database server error");
     }
-    return res.status(200).send("Success!");
+    return res.status(200).send("Edit success!");
   });
 });
 
 // --------------- DELETE staff delete ----------------
 app.delete("/staff/delete", function (req, res) {
 const slotID = req.body.slotID;
+console.log(slotID);
   const sql = "DELETE FROM `room_time_slots` WHERE `slotID` = ?;";
   con.query(sql, [slotID],function (err, results) {
     if (err) {
@@ -465,13 +470,3 @@ app.listen(port, function () {
   console.log("server is ready at " + port);
 });
 
-app.get("/movies", function (_req, res) {
-  const sql = "SELECT * FROM movies";
-  con.query(sql, function (err, results) {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Database server error");
-    }
-    res.json(results);
-  });
-});

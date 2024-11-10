@@ -262,10 +262,11 @@ class _MyWidgetState extends State<RegisterPage> {
                           final repassword =_repasswordController.text.toString();
                           final studentID = _studentIDController.text.toString();
 
-                          if (password == repassword) {
+                          if (password == repassword && password != "" && repassword != "") {
                             // Proceed with registration
                             registerAPI(context, email, name, studentID, password);
-                          } else {
+                          } 
+                          if (password != repassword && password != "" && repassword != ""){
                             // Show error dialog
                             AwesomeDialog(
                               context: context,
