@@ -169,7 +169,7 @@ app.get("/user/history", function (req, res) {
   if (!userID) return res.status(400).send("User ID is required");
 
   const sql =
-    "SELECT htr.id, r.ID AS roomID, r.building, r.image,rq.request_reason, DATE_FORMAT(request_date, '%Y-%m-%d') AS request_date,DATE_FORMAT(ts.borrow_time, '%H:%i') AS borrow_time, DATE_FORMAT(ts.return_time, '%H:%i') AS return_time, rq.request_status, htr.borrow_status FROM historys htr JOIN request rq ON rq.id = htr.requestId JOIN room_time_slots rts ON rts.slotID = rq.room_slot_ID JOIN time_slots ts ON ts.time_slot_id = rts.time_slot_id JOIN room r ON r.ID = rts.roomID JOIN user u_render ON rq.requestBy = u_render.id WHERE u_render.id = ? ORDER BY htr.id;";
+    "SELECT rq.id, r.ID AS roomID, r.building, r.image, rq.request_reason, DATE_FORMAT(request_date, '%Y-%m-%d') AS request_date, DATE_FORMAT(ts.borrow_time, '%H:%i') AS borrow_time, DATE_FORMAT(ts.return_time, '%H:%i') AS return_time, rq.request_status, rq.borrow_status FROM request rq JOIN room_time_slots rts ON rts.slotID = rq.room_slot_ID JOIN time_slots ts ON ts.time_slot_id = rts.time_slot_id JOIN room r ON r.ID = rts.roomID JOIN user u_render ON rq.requestBy = u_render.id WHERE u_render.id = 1 AND rq.request_status IS NOT NULL ORDER BY rq.id;"
   con.query(sql, [userID], function (err, results) {
     if (err) {
       console.error(err);
@@ -253,24 +253,29 @@ app.patch("/approver/changeRequestStatus", function (req, res) {
   if (!requestID) return res.status(400).send("requestID is required");
   if (!requestStatus) return res.status(400).send("requestStatus is required");
 
-  const sql = "UPDATE `request` SET `request_status`= ? WHERE `id`= ?";
-  con.query(sql, [requestStatus, requestID], function (err, results) {
+  const sql = "UPDATE `request` SET `request_status` = ?, `approver` = ?, `borrow_status` = ? WHERE `id` = ?;";
+  con.query(sql, [requestStatus, approverID, requestStatus, requestID], function (err, results) {
     if (err) {
       console.error(err);
       return res.status(500).send("Database server error");
     }
-    const sql_history_add =
-      "INSERT INTO `historys`(`requestID` ,`approver`, borrow_status) VALUES (?, ?, ?);";
-    con.query(
-      sql_history_add,
-      [requestID, approverID, requestStatus],
-      function (err, results) {
-        if (err) {
-          console.error(err);
-          return res.status(500).send("Database server error");
-        }
+    if (requestStatus == "1") {
+      const sql_getRoomID = "SELECT rts.slotID FROM request rq JOIN room_time_slots rts ON rq.room_slot_ID = rts.slotID WHERE rq.id = ?;";
+      con.query(sql_getRoomID, [requestID], function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Database server error");
       }
-    );
+      con.query(
+        `UPDATE room_time_slots SET room_time_status = "0" WHERE slotID = ${results[0].slotID};`,
+        (error, results) => {
+          if (error) {
+            console.error("Error updating value:", error);
+          }
+        }
+      );
+    });
+    }
     return res.status(200).send("Success!");
   });
 });
@@ -281,7 +286,7 @@ app.get("/approver/history", function (req, res) {
   // console.log(userID);
   if (!userID) return res.status(400).send("User ID is required");
   const sql =
-    "SELECT htr.id, r.ID AS roomID, r.building, r.image,rq.request_reason,u_render.studentID, DATE_FORMAT(request_date, '%Y-%m-%d') AS request_date,DATE_FORMAT(ts.borrow_time, '%H:%i') AS borrow_time, DATE_FORMAT(ts.return_time, '%H:%i') AS return_time, u_render.username AS render, rq.request_status FROM historys htr JOIN request rq ON rq.id = htr.requestId JOIN room_time_slots rts ON rts.slotID = rq.room_slot_ID JOIN time_slots ts ON ts.time_slot_id = rts.time_slot_id JOIN room r ON r.ID = rts.roomID JOIN user u_render ON rq.requestBy = u_render.id JOIN user u_approver ON htr.approver = u_approver.id WHERE u_approver.id = ? ORDER BY htr.id;";
+    "SELECT rq.id, r.ID AS roomID, r.building, r.image,rq.request_reason,u_render.studentID, DATE_FORMAT(request_date, '%Y-%m-%d') AS request_date,DATE_FORMAT(ts.borrow_time, '%H:%i') AS borrow_time, DATE_FORMAT(ts.return_time, '%H:%i') AS return_time, u_render.username AS render, rq.request_status FROM request rq JOIN room_time_slots rts ON rts.slotID = rq.room_slot_ID JOIN time_slots ts ON ts.time_slot_id = rts.time_slot_id JOIN room r ON r.ID = rts.roomID JOIN user u_render ON rq.requestBy = u_render.id JOIN user u_approver ON rq.approver = u_approver.id WHERE u_approver.id = ? ORDER BY rq.id;";
   con.query(sql, [userID], function (err, results) {
     if (err) {
       console.error(err);
@@ -293,8 +298,8 @@ app.get("/approver/history", function (req, res) {
 
 // ------------- GET staff History --------------
 app.get("/staff/history", function (req, res) {
-  const sql =
-    "SELECT htr.id, r.ID AS roomID, r.building, u_render.studentID,rq.request_reason, DATE_FORMAT(request_date, '%Y-%m-%d') AS request_date,r.image, DATE_FORMAT(ts.borrow_time, '%H:%i') AS borrow_time, DATE_FORMAT(ts.return_time, '%H:%i') AS return_time, u_render.username AS render, u_approver.username AS approver, rq.request_status, htr.borrow_status FROM historys htr JOIN request rq ON rq.id = htr.requestId JOIN room_time_slots rts ON rts.slotID = rq.room_slot_ID JOIN time_slots ts ON ts.time_slot_id = rts.time_slot_id JOIN room r ON r.ID = rts.roomID JOIN user u_render ON rq.requestBy = u_render.id JOIN user u_approver ON htr.approver = u_approver.id ORDER BY htr.id;";
+    const sql =
+    "SELECT rq.id, r.ID AS roomID, r.building, u_render.studentID,rq.request_reason, DATE_FORMAT(request_date, '%Y-%m-%d') AS request_date,r.image, DATE_FORMAT(ts.borrow_time, '%H:%i') AS borrow_time, DATE_FORMAT(ts.return_time, '%H:%i') AS return_time, u_render.username AS render, u_approver.username AS approver, rq.request_status, rq.borrow_status FROM request rq JOIN room_time_slots rts ON rts.slotID = rq.room_slot_ID JOIN time_slots ts ON ts.time_slot_id = rts.time_slot_id JOIN room r ON r.ID = rts.roomID JOIN user u_render ON rq.requestBy = u_render.id JOIN user u_approver ON rq.approver = u_approver.id ORDER BY rq.id;";
   con.query(sql, function (err, results) {
     if (err) {
       console.error(err);
@@ -376,7 +381,7 @@ console.log(slotID);
 
 // ------------- GET Dashboard --------------
 app.get("/dashboard", function (req, res) {
-  const sql = `SELECT status, IFNULL(SUM(Count), 0) AS Count FROM (SELECT CASE WHEN request_status IS NULL AND DATE(request_date) = CURDATE() THEN 'Pending' END AS status, COUNT(*) AS Count FROM request GROUP BY status UNION ALL SELECT CASE WHEN room_time_status = "0" THEN 'Unavailable' WHEN room_time_status = "1" THEN 'Available' END AS status, COUNT(*) AS Count FROM room_time_slots GROUP BY room_time_status UNION ALL SELECT CASE WHEN borrow_status = "1" AND DATE(rqt.request_date) = CURDATE() THEN 'Reserved' END AS status, COUNT(*) AS Count FROM historys JOIN request rqt ON rqt.id = historys.requestID GROUP BY status UNION ALL SELECT 'Available', 0 UNION ALL SELECT 'Unavailable', 0 UNION ALL SELECT 'Pending', 0 UNION ALL SELECT 'Reserved', 0) AS combined GROUP BY status;`;
+  const sql = `SELECT status, IFNULL(SUM(Count), 0) AS Count FROM (SELECT CASE WHEN request_status IS NULL AND DATE(request_date) = CURDATE() THEN 'Pending' END AS status, COUNT(*) AS Count FROM request GROUP BY status UNION ALL SELECT CASE WHEN room_time_status = "0" THEN 'Unavailable' WHEN room_time_status = "1" THEN 'Available' END AS status, COUNT(*) AS Count FROM room_time_slots GROUP BY room_time_status UNION ALL SELECT CASE WHEN borrow_status = "1" AND DATE(request_date) = CURDATE() THEN 'Reserved' END AS status, COUNT(*) AS Count FROM request GROUP BY status UNION ALL SELECT 'Available', 0 UNION ALL SELECT 'Unavailable', 0 UNION ALL SELECT 'Pending', 0 UNION ALL SELECT 'Reserved', 0) AS combined GROUP BY status;`;
   con.query(sql, function (err, results) {
     if (err) {
       console.error(err);
@@ -398,10 +403,34 @@ cron.schedule("0 10 * * *", () => {
       }
     }
   );
+  // Set request from pending to 0 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID = request.room_slot_ID SET `request_status`='0',`borrow_status`='0' WHERE `request_status` IS NULL AND time_slot_id = 1",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
+      }
+    }
+  );
+  // Set request from borrowing to 2 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID SET `borrow_status`='2' WHERE `borrow_status` = '1' AND time_slot_id = 1",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
+      }
+    }
+  );
+
 });
 
 //When pass 12 am set to status to 0
 cron.schedule("0 12 * * *", () => {
+  // set room to unavailable
   con.query(
     "UPDATE `room_time_slots` SET `room_time_status` = '0' WHERE `time_slot_id` = '2';",
     (error, results) => {
@@ -412,12 +441,57 @@ cron.schedule("0 12 * * *", () => {
       }
     }
   );
+  // Set request from pending to 0 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID = request.room_slot_ID SET `request_status`='0',`borrow_status`='0' WHERE `request_status` IS NULL AND time_slot_id = 2",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
+      }
+    }
+  );
+  // Set request from borrowing to 2 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID SET `borrow_status`='2' WHERE `borrow_status` = '1' AND time_slot_id = 2",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
+      }
+    }
+  );
 });
 
 //When pass 15 am set to status to 0
 cron.schedule("0 15 * * *", () => {
+  // set room to unavailable
   con.query(
     "UPDATE `room_time_slots` SET `room_time_status` = '0' WHERE `time_slot_id` = '3';",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
+      }
+    }
+  );
+  // Set request from pending to 0 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID = request.room_slot_ID SET `request_status`='0',`borrow_status`='0' WHERE `request_status` IS NULL AND time_slot_id = 3",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
+      }
+    }
+  );
+  // Set request from borrowing to 2 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID SET `borrow_status`='2' WHERE `borrow_status` = '1' AND time_slot_id = 3",
     (error, results) => {
       if (error) {
         console.error("Error updating value:", error);
@@ -430,6 +504,7 @@ cron.schedule("0 15 * * *", () => {
 
 //When pass 17 am set to status to 0
 cron.schedule("0 17 * * *", () => {
+  // set room to unavailable
   con.query(
     "UPDATE `room_time_slots` SET `room_time_status` = '0' WHERE `time_slot_id` = '4';",
     (error, results) => {
@@ -437,6 +512,28 @@ cron.schedule("0 17 * * *", () => {
         console.error("Error updating value:", error);
       } else {
         console.log("Slot4 set to 0 successfully.");
+      }
+    }
+  );
+  // Set request from pending to 0 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID = request.room_slot_ID SET `request_status`='0',`borrow_status`='0' WHERE `request_status` IS NULL AND time_slot_id = 4",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
+      }
+    }
+  );
+  // Set request from borrowing to 2 when time pass
+  con.query(
+    "UPDATE `request` JOIN room_time_slots ON room_time_slots.slotID SET `borrow_status`='2' WHERE `borrow_status` = '1' AND time_slot_id = 4",
+    (error, results) => {
+      if (error) {
+        console.error("Error updating value:", error);
+      } else {
+        console.log("Slot3 set to 0 successfully.");
       }
     }
   );

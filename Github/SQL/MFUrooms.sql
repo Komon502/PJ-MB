@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 31, 2024 at 09:42 PM
+-- Generation Time: Nov 13, 2024 at 09:06 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -43,28 +43,6 @@ INSERT INTO `Building` (`ID`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `historys`
---
-
-CREATE TABLE `historys` (
-  `id` int(11) NOT NULL,
-  `requestID` int(11) NOT NULL,
-  `approver` int(11) NOT NULL,
-  `borrow_status` enum('0','1','2') DEFAULT NULL COMMENT '0 = Disapproved, 1 = borrowing, 2 = returned'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `historys`
---
-
-INSERT INTO `historys` (`id`, `requestID`, `approver`, `borrow_status`) VALUES
-(1, 1, 2, '0'),
-(2, 13, 2, '1'),
-(3, 14, 2, '2');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `request`
 --
 
@@ -74,17 +52,19 @@ CREATE TABLE `request` (
   `requestBy` int(11) DEFAULT NULL,
   `request_status` enum('0','1') DEFAULT NULL COMMENT 'Null = pending, 0 = Unapproved, 1 = approved',
   `request_reason` varchar(500) DEFAULT NULL,
-  `request_date` date DEFAULT current_timestamp()
+  `request_date` date DEFAULT current_timestamp(),
+  `approver` int(5) DEFAULT NULL,
+  `borrow_status` enum('0','1','2') DEFAULT NULL COMMENT '0 = Disapproved, 1 = borrowing, 2 = returned'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `request`
 --
 
-INSERT INTO `request` (`id`, `room_slot_ID`, `requestBy`, `request_status`, `request_reason`, `request_date`) VALUES
-(1, 1, 1, '0', 'Good room', '2024-10-30'),
-(13, 2, 5, '1', 'Good room jubjub', '2024-11-01'),
-(14, 5, 6, '1', 'Test1\n', '2024-11-01');
+INSERT INTO `request` (`id`, `room_slot_ID`, `requestBy`, `request_status`, `request_reason`, `request_date`, `approver`, `borrow_status`) VALUES
+(1, 1, 1, '0', 'test 55900wdadksdlawdjaslkdj lkwjdkl asjdklj awkldjlkawj dlkasj lkdjwal sdopi wapdi a;sldk ;lwka ;lskd;lkwa;ls kd;lwk a;ksd ;lwk;l dka;ld kas;lkd ;lwak ;ldwkad ;lawkl;d awk;dl kwal;d sapodi wapodi wpoadk l;askd wpoadipoasd l; kwa;ld k', '2024-10-30', 2, '0'),
+(13, 2, 5, '1', 'Good room jubjub', '2024-11-01', 2, '2'),
+(14, 5, 6, '0', 'Test1\n', '2024-11-01', NULL, '0');
 
 -- --------------------------------------------------------
 
@@ -124,7 +104,7 @@ CREATE TABLE `room_time_slots` (
   `slotID` int(11) NOT NULL,
   `roomID` int(11) DEFAULT NULL,
   `time_slot_id` int(11) DEFAULT NULL,
-  `room_time_status` enum('0','1') NOT NULL
+  `room_time_status` enum('0','1') NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -134,10 +114,16 @@ CREATE TABLE `room_time_slots` (
 INSERT INTO `room_time_slots` (`slotID`, `roomID`, `time_slot_id`, `room_time_status`) VALUES
 (1, 1, 1, '1'),
 (2, 1, 2, '1'),
-(3, 1, 3, '0'),
-(4, 1, 4, '0'),
+(3, 1, 3, '1'),
+(4, 1, 4, '1'),
 (5, 6, 1, '1'),
-(6, 6, 3, '1');
+(6, 6, 3, '1'),
+(7, 2, 1, '1'),
+(8, 2, 2, '1'),
+(9, 2, 3, '1'),
+(10, 2, 4, '1'),
+(11, 3, 1, '1'),
+(12, 3, 2, '1');
 
 -- --------------------------------------------------------
 
@@ -169,8 +155,8 @@ INSERT INTO `time_slots` (`time_slot_id`, `borrow_time`, `return_time`) VALUES
 
 CREATE TABLE `User` (
   `id` int(11) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
+  `email` varchar(50) NOT NULL,
+  `password` varchar(100) NOT NULL,
   `role` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0 = user, 1 = approver, 2 = staff',
   `borrowQuota` int(1) NOT NULL DEFAULT 1,
   `username` varchar(50) DEFAULT NULL,
@@ -182,7 +168,7 @@ CREATE TABLE `User` (
 --
 
 INSERT INTO `User` (`id`, `email`, `password`, `role`, `borrowQuota`, `username`, `studentID`) VALUES
-(1, 'user@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 0, 1, 'user', 6531501999),
+(1, 'user@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 0, 0, 'user', 6531501999),
 (2, 'approver@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 1, 1, 'approver', NULL),
 (3, 'staff@example.com', '$2b$10$Mezb8Ek15oSk32T.JZu2cOmHV0J.mhK/x5PeIHlYlAS9zWj3nRL/i', 2, 1, 'staff', NULL),
 (4, 'Tese@Email.com', '$2b$10$okDFzW1mksE2TebzP3trHupcHmFgvcBrXJbR2FahyJ6k6rR42LKMy', 0, 1, 'test', 6531501998),
@@ -200,20 +186,13 @@ ALTER TABLE `Building`
   ADD PRIMARY KEY (`ID`);
 
 --
--- Indexes for table `historys`
---
-ALTER TABLE `historys`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_requestID` (`requestID`),
-  ADD KEY `fk_approver` (`approver`);
-
---
 -- Indexes for table `request`
 --
 ALTER TABLE `request`
   ADD PRIMARY KEY (`id`),
   ADD KEY `room_slot_ID` (`room_slot_ID`),
-  ADD KEY `requestBy` (`requestBy`);
+  ADD KEY `requestBy` (`requestBy`),
+  ADD KEY `request_ibfk_3` (`approver`);
 
 --
 -- Indexes for table `Room`
@@ -248,22 +227,16 @@ ALTER TABLE `User`
 --
 
 --
--- AUTO_INCREMENT for table `historys`
---
-ALTER TABLE `historys`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
 -- AUTO_INCREMENT for table `request`
 --
 ALTER TABLE `request`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `room_time_slots`
 --
 ALTER TABLE `room_time_slots`
-  MODIFY `slotID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `slotID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `time_slots`
@@ -275,25 +248,19 @@ ALTER TABLE `time_slots`
 -- AUTO_INCREMENT for table `User`
 --
 ALTER TABLE `User`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- Constraints for dumped tables
 --
 
 --
--- Constraints for table `historys`
---
-ALTER TABLE `historys`
-  ADD CONSTRAINT `fk_approver` FOREIGN KEY (`approver`) REFERENCES `User` (`id`),
-  ADD CONSTRAINT `fk_requestID` FOREIGN KEY (`requestID`) REFERENCES `request` (`id`);
-
---
 -- Constraints for table `request`
 --
 ALTER TABLE `request`
   ADD CONSTRAINT `request_ibfk_1` FOREIGN KEY (`room_slot_ID`) REFERENCES `room_time_slots` (`slotID`),
-  ADD CONSTRAINT `request_ibfk_2` FOREIGN KEY (`requestBy`) REFERENCES `User` (`id`);
+  ADD CONSTRAINT `request_ibfk_2` FOREIGN KEY (`requestBy`) REFERENCES `User` (`id`),
+  ADD CONSTRAINT `request_ibfk_3` FOREIGN KEY (`approver`) REFERENCES `User` (`id`);
 
 --
 -- Constraints for table `Room`
